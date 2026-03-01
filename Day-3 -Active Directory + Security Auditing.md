@@ -20,6 +20,9 @@ The goal is to simulate a real company network and practice SOC monitoring.
 ---
 
 # 🏗 1️⃣ Architecture Overview
+<p align="center">
+  <img src="assets/ad-architecture.png" width="800">
+</p>
 
 This is how the lab environment works:
 
@@ -27,7 +30,6 @@ Attacker → Internet → AWS VPC → Active Directory → Splunk → SOC Analys
 
 ## 📸 Architecture Diagram (From Page 3)
 
-![Architecture Diagram](architecture.png)
 
 > The diagram shows:
 > - Attacker sending traffic
@@ -52,6 +54,9 @@ Attacker → Internet → AWS VPC → Active Directory → Splunk → SOC Analys
 
 This server will become our Domain Controller.
 
+<p align="center">
+  <img src="assets/ad-instance.png" width="800">
+</p>
 ---
 
 # 🧠 3️⃣ Install Active Directory (AD DS)
@@ -90,9 +95,11 @@ After AD installation, create users.
    - Normal users
    - Domain Admin (if required)
 
-## 📸 Active Directory Users Window (From Page 3)
+## 📸 Active Directory Users Window 
 
-![AD Users Screenshot](ad_users.png)
+<p align="center">
+  <img src="assets/ad-setup.png" width="800">
+</p>
 
 > This screenshot shows:
 > - Domain structure
@@ -173,7 +180,9 @@ You will see Windows Security Events.
 
 ## 📸 Splunk Log Search (From Page 4)
 
-![Splunk Screenshot](splunk_logs.png)
+<p align="center">
+  <img src="assets/ad-splunk.png" width="800">
+</p>
 
 > This screenshot shows:
 > - Event logs
@@ -220,11 +229,7 @@ We built a real Enterprise SOC Lab including:
 - Security Monitoring
 - Attack Simulation Capability
 
-This strengthens practical skills in:
 
-- SOC Analysis
-- Detection Engineering
-- Blue Team Operations
 
 ---
 
