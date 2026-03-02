@@ -1,31 +1,32 @@
-# 📝 DAY 5 – Endpoint Deployment & Log Forwarding to Splunk
-# 👶 Super Simple Step-By-Step Guide
+# 📝 DAY 4 – Endpoint Deployment & Log Forwarding to Splunk
+
 
 ---
 
 # 🧠 What Are We Building?
 
-Think of this lab like this:
+Imagine this like a story:
 
-👨‍💻 Attacker → 🌍 Internet → ☁ AWS → 🖥 Windows Computer → 📦 Splunk → 🧑‍💼 SOC Analyst
+👨‍💻 Attacker → 🌐 Internet → ☁ AWS → 🖥 Windows Computer → 📦 Splunk → 🧑‍💼 SOC Analyst
 
-We are making a small company network inside AWS and sending all computer logs to Splunk so we can monitor everything.
-
----
-
-## 🖼 Lab Architecture
-
-```
-Attacker → Internet → AWS VPC → Endpoint → Splunk → SOC Analyst
-```
+We are building a small company network in AWS.
+Then we send all computer logs to Splunk so we can monitor everything.
 
 ---
 
-## 📸 IMAGE 1 – Lab Architecture
+# 🖼 Lab Architecture
+<p align="center">
+  <img src="assets/ENDPOINT-ARCHITECTURE.png" width="800">
+</p>
 
-```
-![Lab Architecture](images/lab_architecture.png)
-```
+This shows:
+
+- Attacker outside
+- AWS VPC
+- Windows Endpoint
+- Active Directory
+- Splunk Server
+- SOC Analyst
 
 ---
 
@@ -35,47 +36,49 @@ Attacker → Internet → AWS VPC → Endpoint → Splunk → SOC Analyst
 
 ## ✅ Step 1 – Login to AWS
 
-1. Go to AWS Console
+1. Open AWS Console
 2. Click **EC2**
 3. Click **Launch Instance**
 
 ---
 
-## ✅ Step 2 – Choose Settings
+## ✅ Step 2 – Configure Instance
 
 Choose:
 
 - OS: Windows 10 / Windows Server
-- Instance type: t2.medium or higher
 - Network: Your SOC VPC
 - Subnet: Private Subnet
-- Security Group:
-  - Allow RDP (3389)
+- Security Group: Allow RDP (3389)
 
 Click **Launch**
 
 ---
 
-## 📸 IMAGE 2 – EC2 Running Instance
+## EC2 Instance Running
 
-```
-![EC2 Endpoint Running](images/ec2_endpoint_running.png)
-```
+
+<p align="center">
+  <img src="assets/ENDPOINT-INSTNACE.png" width="800">
+</p>
+
+
+If you see **Running** → Good job 🎉
 
 ---
 
 ## ✅ Step 3 – Connect to Windows
 
-1. Select Instance
+1. Select the instance
 2. Click **Connect**
-3. Use RDP file
+3. Download RDP file
 4. Login as Administrator
 
-Now you are inside your Windows endpoint 🎉
+Now you are inside your Windows endpoint.
 
 ---
 
-# 🏢 PART 2 – Join Domain (soc.local)
+# 🏢 PART 2 – Join the Computer to Domain (soc.local)
 
 This makes the computer part of your company network.
 
@@ -83,90 +86,71 @@ This makes the computer part of your company network.
 
 ## ✅ Step 1 – Open System Settings
 
-1. Press `Win + R`
-2. Type:
+Press:
+
+```
+Win + R
+```
+
+Type:
 
 ```
 sysdm.cpl
 ```
 
-3. Click **Change**
-4. Select **Domain**
-5. Enter:
+Click **Change**
+
+Select:
 
 ```
-soc.local
+Domain → soc.local
 ```
 
-6. Enter Domain Admin credentials
-7. Restart system
+Enter domain admin username and password.
 
-Now your endpoint is part of Active Directory.
+Restart computer.
+
+Now your computer belongs to the company network 🏢
 
 ---
 
 # 📦 PART 3 – Install Splunk Universal Forwarder
 
-This is the most important part.
-
-Universal Forwarder = Log sender 📤
+This is the log sender 📤
 
 ---
 
 ## ✅ Step 1 – Download Forwarder
 
-On Windows Endpoint:
+On Windows endpoint:
 
 1. Open browser
-2. Go to:
-   https://www.splunk.com
+2. Go to Splunk website
 3. Download:
-   **Splunk Universal Forwarder for Windows**
+   **Splunk Universal Forwarder (Windows)**
 
 ---
 
 ## ✅ Step 2 – Install
 
-Double-click installer:
+During installation:
 
 ✔ Accept license  
 ✔ Enter Splunk Server IP  
 ✔ Port: `9997`  
-✔ Finish install  
+✔ Finish  
+
+Now forwarder is installed.
 
 ---
 
-## 📸 IMAGE 3 – Splunk Receiving Logs
-
-```
-![Splunk Receiving Logs](images/splunk_logs.png)
-```
+# ⚙ PART 4 – Enable Log Monitoring
 
 ---
 
-# ⚙ PART 4 – Configure Log Forwarding
+## ✅ Step 1 – Open Command Prompt (Admin)
 
----
-
-## ✅ Step 1 – Open Services
-
-Press:
-
-```
-services.msc
-```
-
-Make sure:
-
-```
-SplunkForwarder = Running
-```
-
----
-
-## ✅ Step 2 – Enable Windows Log Monitoring
-
-Open Command Prompt as Admin:
+Go to Splunk folder:
 
 ```cmd
 cd "C:\Program Files\SplunkUniversalForwarder\bin"
@@ -190,7 +174,7 @@ Enable Application Logs:
 splunk add monitor WinEventLog:Application
 ```
 
-Restart forwarder:
+Restart Splunk:
 
 ```cmd
 splunk restart
@@ -200,153 +184,84 @@ Now logs are being sent to Splunk 📡
 
 ---
 
-# 🔍 PART 5 – Verify in Splunk
+# 🔍 PART 5 – Verify Logs in Splunk
 
 Go to Splunk Web.
 
-Run this:
+Search:
 
 ```spl
 index="end_point"
 ```
 
-You should see:
+---
 
-- EventCode=4688
+## Splunk Receiving Logs
+<p align="center">
+  <img src="assets/ENDPOINT-SPLUNK.png" width="800">
+</p>
+
+
+If you see events like:
+
 - EventCode=4624
 - EventCode=4625
-- Security Logs
-- System Logs
+- EventCode=4688
+- EventCode=7045
 
-If logs appear → SUCCESS 🎉
+🔥 SUCCESS! Logs are working!
 
 ---
 
 # 🛡 What Can You Detect Now?
 
-Now your SOC can detect:
+You can now detect:
 
 | Attack | Event ID |
 |--------|----------|
-| Failed Login | 4625 |
 | Successful Login | 4624 |
-| Process Created | 4688 |
-| Service Created | 7045 |
+| Failed Login | 4625 |
+| Process Creation | 4688 |
+| Service Creation | 7045 |
 | User Added to Admin | 4732 |
 
-Your lab is now a real SOC monitoring environment.
+Your SOC can now see everything happening on the endpoint 👀
 
 ---
 
-# 🌍 PART 6 – Add Linux Web Server (DVWA)
+# 🎯 Why This Is Important
+
+In real companies:
+
+- Endpoints are main attack targets
+- Hackers try password attacks
+- Hackers run malware
+- Hackers escalate privileges
+
+By sending logs to Splunk, you can:
+
+✔ Monitor everything  
+✔ Detect attacks  
+✔ Investigate incidents  
+✔ Build SOC skills  
+
+Hands-on practice > Only theory.
 
 ---
 
-## ✅ Step 1 – Launch Linux EC2 (Public Subnet)
+# 🚀 What You Built Today
 
-- OS: Ubuntu
-- Open Port 80 (HTTP)
-
----
-
-## ✅ Step 2 – Install Apache
-
-SSH into server:
-
-```bash
-sudo apt update
-sudo apt install apache2 -y
-```
-
-Open browser:
-
-```
-http://<public-ip>
-```
-
-Apache page should load.
-
----
-
-## ✅ Step 3 – Install DVWA
-
-```bash
-sudo apt install php php-mysql mysql-server -y
-```
-
-Download DVWA:
-
-```bash
-git clone https://github.com/digininja/DVWA.git
-```
-
-Configure database and start Apache.
-
-Now you have vulnerable web app 🎯
-
----
-
-## ✅ Step 4 – Install Splunk Forwarder on Linux
-
-Download:
-
-```bash
-wget splunkforwarder.tgz
-```
-
-Install:
-
-```bash
-tar -xvf splunkforwarder.tgz
-```
-
-Forward logs to Splunk server:
-
-```bash
-./splunk add forward-server <splunk-ip>:9997
-```
-
-Start Splunk:
-
-```bash
-./splunk start
-```
-
-Now Linux logs also go to Splunk.
-
----
-
-# 🎯 What You Built
-
-You now have:
-
-✔ Windows Endpoint  
-✔ Active Directory  
-✔ Linux Web Server  
-✔ DVWA  
-✔ Splunk SIEM  
-✔ Real-time Log Monitoring  
-
-This is an **Enterprise SOC Simulation Lab**.
-
----
-
-# 🧠 Why This Is Powerful
-
-You are learning:
-
-- Endpoint Monitoring
-- Log Forwarding
-- SIEM Configuration
-- Detection Engineering
-- Attack Simulation
-- Blue Team Skills
+✔ Windows EC2 inside AWS  
+✔ Joined to Active Directory  
+✔ Installed Splunk Forwarder  
+✔ Sent logs to Splunk  
+✔ Enabled enterprise-level monitoring  
 
 This is real SOC work.
 
 ---
 
-# 🏁 Final Check
+# 🏁 Final Test
 
 If this works:
 
@@ -354,14 +269,10 @@ If this works:
 index=*
 ```
 
-And you see logs from:
+And you see Windows logs →  
 
-- Windows
-- Linux
-- Domain Controller
-
-🔥 Your SOC Lab is Successfully Built.
+🎉 Your Endpoint Deployment & Log Forwarding is SUCCESSFUL.
 
 ---
 
-# 📌 END OF DAY 5 – Endpoint Deployment & Log Forwarding
+# 📌 END OF DAY 4 – Endpoint Deployment & Log Forwarding
