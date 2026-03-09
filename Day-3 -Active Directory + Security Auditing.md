@@ -1,239 +1,224 @@
-# 🔐 SOC Lab Build – Day 3  
-## Active Directory + Security Auditing (Enterprise SOC Lab - AWS)
+# Setup-03 — Active Directory Domain Controller Setup on AWS
+
+![AWS](https://img.shields.io/badge/Platform-AWS-FF9900?style=flat-square&logo=amazonaws)
+![Windows Server](https://img.shields.io/badge/OS-Windows%20Server%202022-0078D6?style=flat-square&logo=windows)
+![Active Directory](https://img.shields.io/badge/Service-Active%20Directory-purple?style=flat-square)
+![Splunk](https://img.shields.io/badge/SIEM-Splunk-FF6B35?style=flat-square&logo=splunk)
+![Status](https://img.shields.io/badge/Status-Completed-brightgreen?style=flat-square)
 
 ---
 
-# 📘 Introduction
+## 📋 Overview
 
-In this lab, we built a small enterprise environment inside AWS.
-
-We:
-
-- Created a Windows Server (Domain Controller)
-- Installed Active Directory
-- Created domain users
-- Enabled advanced security auditing
-- Connected logs to Splunk SIEM
-
-The goal is to simulate a real company network and practice SOC monitoring.
+A Windows Server EC2 instance was deployed inside the SOC-VPC and configured as an Active Directory Domain Controller. Domain users and security groups were created to simulate a real enterprise environment. Advanced audit policies were enabled to generate security events across all monitored categories. Logs were forwarded to the Splunk SIEM server via Universal Forwarder for centralized monitoring and detection.
 
 ---
 
-# 🏗 1️⃣ Architecture Overview
+## 🏗️ Architecture
+
+```
+Attacker Machine
+      │
+      ▼
+Internet Gateway (SOC-IGW)
+      │
+      ▼
+SOC-VPC (10.0.0.0/16)
+      ├── Active Directory DC (Windows Server) ──► Splunk Forwarder ──► Splunk SIEM
+      ├── Windows Endpoint                      ──► Splunk Forwarder ──┘
+      └── Ubuntu Web Server                     ──► Splunk Forwarder ──┘
+                                                                        │
+                                                                        ▼
+                                                                  SOC Analyst
+```
+
 <p align="center">
   <img src="assets/ad-architecture.png" width="800">
 </p>
 
-This is how the lab environment works:
-
-Attacker → Internet → AWS VPC → Active Directory → Splunk → SOC Analyst
-
-## 📸 Architecture Diagram (From Page 3)
-
-
-> The diagram shows:
-> - Attacker sending traffic
-> - AWS VPC hosting the server
-> - Active Directory Domain Controller
-> - Logs sent to Splunk
-> - SOC Analyst monitoring everything
 
 ---
 
-# 🖥 2️⃣ Deploy Windows Server (Domain Controller)
+## ⚙️ EC2 Instance Configuration
 
-### Steps:
+| Setting | Value |
+|---|---|
+| AMI | Windows Server 2022 |
+| Instance Type | t2.micro (Free Tier) |
+| Network | SOC-VPC |
+| Subnet | SOC-Public-Subnet |
+| Auto-assign Public IP | Enabled |
+| Storage | 30GB gp2 |
 
-1. Go to AWS EC2
-2. Launch Windows Server instance
-3. Place it inside custom VPC
-4. Allow:
-   - RDP (3389)
-   - Splunk (9997, 8000)
-5. Connect using Remote Desktop
+---
 
-This server will become our Domain Controller.
+## 🔐 Security Group — Inbound Rules
+
+| Port | Protocol | Purpose |
+|---|---|---|
+| 3389 | TCP | RDP access for administration |
+| 9997 | TCP | Splunk Universal Forwarder outbound |
+| 8000 | TCP | Splunk Web Interface |
+
+---
+
+## ⚙️ Deployment Steps
+
+### Step 1 — Launch Windows Server EC2
+
+Launch a Windows Server 2022 instance inside SOC-VPC with the security group rules above. Connect via Remote Desktop Protocol (RDP) using the key pair password.
 
 <p align="center">
   <img src="assets/ad-instance.png" width="800">
 </p>
+
 ---
 
-# 🧠 3️⃣ Install Active Directory (AD DS)
-
-Active Directory manages users and permissions.
-
-### Steps:
+### Step 2 — Install Active Directory Domain Services (AD DS)
 
 1. Open **Server Manager**
 2. Click **Add Roles and Features**
-3. Select:
-   - Active Directory Domain Services (AD DS)
-4. Install the role
-5. Promote server to Domain Controller
-6. Create new domain:
+3. Select **Active Directory Domain Services (AD DS)**
+4. Complete installation
+5. Click **Promote this server to a domain controller**
+6. Select **Add a new forest**
+7. Set root domain name:
 
 ```
 soc.local
 ```
 
-7. Restart server
+8. Set DSRM password
+9. Complete wizard and restart server
 
----
-
-# 👥 4️⃣ Create Domain Users
-
-After AD installation, create users.
-
-### Steps:
-
-1. Open:
-   Active Directory Users and Computers
-2. Right-click → New → User
-3. Create test users
-4. Assign:
-   - Normal users
-   - Domain Admin (if required)
-
-## 📸 Active Directory Users Window 
 
 <p align="center">
   <img src="assets/ad-setup.png" width="800">
 </p>
 
-> This screenshot shows:
-> - Domain structure
-> - Users list
-> - Security groups
-> - Domain Admins group
+---
+
+### Step 3 — Create Domain Users
+
+1. Open **Active Directory Users and Computers**
+2. Expand `soc.local`
+3. Right-click **Users** → **New** → **User**
+4. Create the following test accounts:
+
+| Username | Role | Purpose |
+|---|---|---|
+| john.doe | Standard User | Simulate normal user activity |
+| jane.admin | Domain Admin | Simulate privileged account |
+| svc.splunk | Service Account | Splunk log forwarding |
+
+> **Screenshot — Active Directory Users and Computers:**
+> `assets/ad-users.png`
 
 ---
 
-# 🔐 5️⃣ Configure Advanced Audit Policies
+### Step 4 — Configure Advanced Audit Policies
 
-To monitor security events, enable auditing.
+Open **Group Policy Management** → Default Domain Policy → Edit
 
-### Enabled Events:
+Navigate to:
+```
+Computer Configuration → Policies → Windows Settings
+→ Security Settings → Advanced Audit Policy Configuration
+```
 
-- ✅ Logon Success (Event ID 4624)
-- ✅ Logon Failure (Event ID 4625)
-- ✅ Account Lockout (4740)
-- ✅ User & Group Management
-- ✅ Credential Validation
-- ✅ Process Creation (4688)
-- ✅ Privilege Escalation Monitoring
+Enable the following audit categories:
 
-These logs help detect:
+| Category | Events Generated | Monitored For |
+|---|---|---|
+| Logon/Logoff — Success | 4624 | Successful logins |
+| Logon/Logoff — Failure | 4625 | Failed logins / brute force |
+| Account Lockout | 4740 | Account lockout after failures |
+| Account Management | 4720, 4727, 4728, 4732 | User/group creation and modification |
+| Privilege Use | 4672 | Privileged account usage |
+| Process Creation | 4688 | New process execution |
+| Directory Service Changes | 5136 | AD object modifications |
 
-- Brute force attacks
-- Privilege abuse
-- Suspicious processes
-- Lateral movement
+Apply policy:
+
+```cmd
+gpupdate /force
+```
+
+> **Screenshot — Advanced Audit Policy Configuration:**
+> `assets/audit-policy.png`
 
 ---
 
-# 📦 6️⃣ Install Splunk Universal Forwarder
+### Step 5 — Install Splunk Universal Forwarder
 
-Now we send logs to SIEM.
+Download Splunk Universal Forwarder from splunk.com and install on the Domain Controller.
 
-### Steps:
-
-1. Download Splunk Universal Forwarder
-2. Install on:
-   - Domain Controller
-3. Configure forwarding to:
+During installation configure:
 
 ```
-Splunk Server IP
-Port: 9997
+Deployment Server: <Splunk-Server-IP>:8089
+Receiving Indexer:  <Splunk-Server-IP>:9997
 ```
 
-4. Start Splunk service
+After installation, configure inputs to forward Security and System event logs:
+
+```
+Settings → Forwarding and Receiving → Forward Data
+Index: windows
+Log: Security, System, Application
+```
+
+> **Screenshot — Universal Forwarder Installed:**
+> `assets/uf-installed.png`
 
 ---
 
-# 🌐 7️⃣ Enable Splunk Web Access
+### Step 6 — Verify Logs in Splunk
 
-Open browser:
+On the Splunk server, confirm logs are being received:
 
-```
-http://<splunk-server-ip>:8000
-```
-
-Login as admin.
-
----
-
-# 🔍 8️⃣ View Logs in Splunk
-
-Go to:
-
-Search & Reporting → New Search
-
-Search example:
-
-```
-index=wineventlog
+```spl
+index=windows
+| stats count by EventCode
+| sort - count
 ```
 
-You will see Windows Security Events.
+Expected Event IDs visible:
 
-## 📸 Splunk Log Search (From Page 4)
+```
+4624 — Successful Logon
+4625 — Failed Logon
+4688 — Process Creation
+4720 — User Account Created
+```
 
 <p align="center">
   <img src="assets/ad-splunk.png" width="800">
 </p>
 
-> This screenshot shows:
-> - Event logs
-> - EventCode values
-> - Login events
-> - Security event timeline
+---
+
+## ✅ Deployment Summary
+
+| Component | Status |
+|---|---|
+| Windows Server EC2 launched | ✅ |
+| Active Directory (AD DS) installed | ✅ |
+| Domain `soc.local` created | ✅ |
+| Domain users created | ✅ |
+| Advanced audit policies enabled | ✅ |
+| Splunk Universal Forwarder installed | ✅ |
+| Logs forwarding to Splunk (index=windows) | ✅ |
 
 ---
 
-# 🎯 Lab Objective
+## 🔗 Next Steps
 
-This lab helps practice:
-
-- Windows Security Log Analysis
-- Active Directory Monitoring
-- Privilege Escalation Detection
-- Brute-force Detection
-- SOC Alert Creation
-- Log Correlation
+- [Setup-04 → Web Server (DVWA) Deployment](04_Web_Server_Setup.md)
+- [AD-01 → Brute Force Attack Detection (Event ID 4625)](../active-directory-attacks/AD-01_Brute_Force_RDP_4625.md)
+- [AD-02 → Account Lockout Detection (Event ID 4740)](../active-directory-attacks/AD-02_Account_Lockout_4740.md)
+- [AD-03 → Backdoor User & Group Creation (Event ID 4720)](../active-directory-attacks/AD-03_User_Group_Creation.md)
 
 ---
 
-# 🚀 Next Steps
-
-Next we will:
-
-1. Deploy Windows Endpoint
-2. Join endpoint to domain
-3. Install Splunk Forwarder
-4. Simulate attacks:
-   - Brute Force
-   - Lateral Movement
-   - Privilege Escalation
-5. Create detection rules & dashboards
-
----
-
-# 🏆 Final Outcome
-
-We built a real Enterprise SOC Lab including:
-
-- Active Directory Environment
-- Centralized Logging (SIEM)
-- Security Monitoring
-- Attack Simulation Capability
-
-
-
----
-
-# 📚 Reference
-
-Based on:
-SOC Lab Build – Day 3 | Active Directory + Security Auditing :contentReference[oaicite:1]{index=1}
+*SOC Lab Infrastructure | Active Directory on Windows Server 2022 | AWS Free Tier | Author: [Nadil](https://github.com/Nadhil-an)*
