@@ -76,7 +76,9 @@ index=windows EventCode=4625
 📸 — Splunk Detection of 4625  
 
 
-![Splunk Failed Logins](images/splunk_4625_detection.png)
+<p align="center">
+  <img src="../assets/ad-bruteforce.jpg" width="700">
+</p>
 
 ---
 
@@ -109,7 +111,9 @@ This is more dangerous.
 📸 — Successful AD Login  
 
 
-![Successful Login](images/successful_login_4624.png)
+<p align="center">
+  <img src="../assets/ad-success.jpg" width="700">
+</p>
 
 ---
 
