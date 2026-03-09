@@ -1,278 +1,221 @@
-# 📝 DAY 4 – Endpoint Deployment & Log Forwarding to Splunk
+# Setup-04 — Windows Endpoint Deployment & Log Forwarding to Splunk
 
-
----
-
-# 🧠 What Are We Building?
-
-Imagine this like a story:
-
-👨‍💻 Attacker → 🌐 Internet → ☁ AWS → 🖥 Windows Computer → 📦 Splunk → 🧑‍💼 SOC Analyst
-
-We are building a small company network in AWS.
-Then we send all computer logs to Splunk so we can monitor everything.
+![AWS](https://img.shields.io/badge/Platform-AWS-FF9900?style=flat-square&logo=amazonaws)
+![Windows](https://img.shields.io/badge/OS-Windows%2010%2FServer-0078D6?style=flat-square&logo=windows)
+![Splunk](https://img.shields.io/badge/SIEM-Splunk-FF6B35?style=flat-square&logo=splunk)
+![Active Directory](https://img.shields.io/badge/Domain-soc.local-purple?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Completed-brightgreen?style=flat-square)
 
 ---
 
-# 🖼 Lab Architecture
+## 📋 Overview
+
+A Windows endpoint EC2 instance was deployed inside the SOC-VPC and joined to the `soc.local` Active Directory domain. Splunk Universal Forwarder was installed and configured to forward Security, System, and Application event logs to the central Splunk SIEM server. This enables real-time monitoring of all endpoint activity — including logins, process creation, service installation, and privilege escalation — forming the primary attack surface for all endpoint detection labs.
+
+---
+
+## 🏗️ Architecture
+
+```
+Attacker Machine
+      │
+      ▼
+Internet Gateway (SOC-IGW)
+      │
+      ▼
+SOC-VPC (10.0.0.0/16)
+      ├── Windows Endpoint ──► Splunk Forwarder (port 9997) ──► Splunk SIEM
+      └── Active Directory (soc.local) ◄── Domain Join
+```
+
 <p align="center">
   <img src="assets/ENDPOINT-ARCHITECTURE.png" width="800">
 </p>
 
-This shows:
-
-- Attacker outside
-- AWS VPC
-- Windows Endpoint
-- Active Directory
-- Splunk Server
-- SOC Analyst
 
 ---
 
-# 🛠 PART 1 – Create Windows Endpoint in AWS
+## ⚙️ EC2 Instance Configuration
+
+| Setting | Value |
+|---|---|
+| AMI | Windows Server 2019 / Windows 10 |
+| Instance Type | t2.micro (Free Tier) |
+| Network | SOC-VPC |
+| Subnet | SOC-Public-Subnet |
+| Auto-assign Public IP | Enabled |
+| Storage | 30GB gp2 |
 
 ---
 
-## ✅ Step 1 – Login to AWS
+## 🔐 Security Group — Inbound Rules
 
-1. Open AWS Console
-2. Click **EC2**
-3. Click **Launch Instance**
-
----
-
-## ✅ Step 2 – Configure Instance
-
-Choose:
-
-- OS: Windows 10 / Windows Server
-- Network: Your SOC VPC
-- Subnet: Private Subnet
-- Security Group: Allow RDP (3389)
-
-Click **Launch**
+| Port | Protocol | Purpose |
+|---|---|---|
+| 3389 | TCP | RDP access for administration |
+| 9997 | TCP | Splunk Universal Forwarder outbound |
 
 ---
 
-## EC2 Instance Running
+## ⚙️ Deployment Steps
 
+### Step 1 — Launch Windows EC2 Instance
+
+Launch a Windows instance inside SOC-VPC. Connect via RDP using the Administrator credentials from the key pair.
 
 <p align="center">
   <img src="assets/ENDPOINT-INSTNACE.png" width="800">
 </p>
-
-
-If you see **Running** → Good job 🎉
+`
 
 ---
 
-## ✅ Step 3 – Connect to Windows
+### Step 2 — Join Endpoint to Active Directory Domain
 
-1. Select the instance
-2. Click **Connect**
-3. Download RDP file
-4. Login as Administrator
-
-Now you are inside your Windows endpoint.
-
----
-
-# 🏢 PART 2 – Join the Computer to Domain (soc.local)
-
-This makes the computer part of your company network.
-
----
-
-## ✅ Step 1 – Open System Settings
-
-Press:
+1. Press `Win + R` → type `sysdm.cpl` → Enter
+2. Click **Change** under Computer Name
+3. Select **Domain** and enter:
 
 ```
-Win + R
+soc.local
 ```
 
-Type:
+4. Enter Domain Administrator credentials when prompted
+5. Restart the machine
 
-```
-sysdm.cpl
-```
+After restart, the endpoint is a member of the `soc.local` domain and will generate domain-level security events.
 
-Click **Change**
-
-Select:
-
-```
-Domain → soc.local
-```
-
-Enter domain admin username and password.
-
-Restart computer.
-
-Now your computer belongs to the company network 🏢
 
 ---
 
-# 📦 PART 3 – Install Splunk Universal Forwarder
+### Step 3 — Install Splunk Universal Forwarder
 
-This is the log sender 📤
+Download Splunk Universal Forwarder (Windows) from splunk.com and run the installer.
 
----
+During installation configure:
 
-## ✅ Step 1 – Download Forwarder
-
-On Windows endpoint:
-
-1. Open browser
-2. Go to Splunk website
-3. Download:
-   **Splunk Universal Forwarder (Windows)**
+| Setting | Value |
+|---|---|
+| Deployment Server | `<Splunk-Server-IP>:8089` |
+| Receiving Indexer | `<Splunk-Server-IP>:9997` |
 
 ---
 
-## ✅ Step 2 – Install
+### Step 4 — Configure Log Monitoring
 
-During installation:
-
-✔ Accept license  
-✔ Enter Splunk Server IP  
-✔ Port: `9997`  
-✔ Finish  
-
-Now forwarder is installed.
-
----
-
-# ⚙ PART 4 – Enable Log Monitoring
-
----
-
-## ✅ Step 1 – Open Command Prompt (Admin)
-
-Go to Splunk folder:
+Open Command Prompt as Administrator and navigate to the Splunk Forwarder bin directory:
 
 ```cmd
 cd "C:\Program Files\SplunkUniversalForwarder\bin"
 ```
 
-Enable Security Logs:
+Add Windows event log monitors:
 
 ```cmd
 splunk add monitor WinEventLog:Security
-```
-
-Enable System Logs:
-
-```cmd
 splunk add monitor WinEventLog:System
-```
-
-Enable Application Logs:
-
-```cmd
 splunk add monitor WinEventLog:Application
 ```
 
-Restart Splunk:
+Restart the forwarder to apply changes:
 
 ```cmd
 splunk restart
 ```
 
-Now logs are being sent to Splunk 📡
-
 ---
 
-# 🔍 PART 5 – Verify Logs in Splunk
+### Step 5 — Enable Process Creation Command Line Logging
 
-Go to Splunk Web.
+This is required for detecting encoded PowerShell and malware execution in the endpoint labs.
 
-Search:
+Open Group Policy Editor:
 
-```spl
-index="end_point"
+```
+Win + R → gpedit.msc
+```
+
+Navigate to:
+
+```
+Computer Configuration → Administrative Templates
+→ System → Audit Process Creation
+→ Include command line in process creation events → Enabled
+```
+
+Apply policy:
+
+```cmd
+gpupdate /force
 ```
 
 ---
 
-## Splunk Receiving Logs
+### Step 6 — Enable Advanced Audit Policies
+
+Open Command Prompt as Administrator:
+
+```cmd
+auditpol /set /subcategory:"Process Creation" /success:enable
+auditpol /set /subcategory:"Registry" /success:enable /failure:enable
+auditpol /set /subcategory:"Security Group Management" /success:enable /failure:enable
+```
+
+Verify:
+
+```cmd
+auditpol /get /category:*
+```
+
+---
+
+### Step 7 — Verify Logs in Splunk
+
+On the Splunk server, confirm endpoint logs are being received:
+
+```spl
+index=end_point
+| stats count by EventCode
+| sort - count
+```
+
+Expected Event IDs:
+
+| Event ID | Description |
+|---|---|
+| 4624 | Successful logon |
+| 4625 | Failed logon |
+| 4688 | New process created |
+| 4657 | Registry value modified |
+| 4720 | User account created |
+| 4732 | User added to Administrators |
+| 7045 | New service installed |
+
 <p align="center">
   <img src="assets/ENDPOINT-SPLUNK.png" width="800">
 </p>
 
+---
 
-If you see events like:
+## ✅ Deployment Summary
 
-- EventCode=4624
-- EventCode=4625
-- EventCode=4688
-- EventCode=7045
-
-🔥 SUCCESS! Logs are working!
+| Component | Status |
+|---|---|
+| Windows EC2 launched | ✅ |
+| Joined to `soc.local` domain | ✅ |
+| Splunk Universal Forwarder installed | ✅ |
+| Security / System / Application logs forwarding | ✅ |
+| Process creation command line logging enabled | ✅ |
+| Advanced audit policies configured | ✅ |
+| Logs visible in Splunk `index=end_point` | ✅ |
 
 ---
 
-# 🛡 What Can You Detect Now?
+## 🔗 Next Steps
 
-You can now detect:
+- [Setup-05 → Web Server (DVWA) Deployment](05_Web_Server_Setup.md)
 
-| Attack | Event ID |
-|--------|----------|
-| Successful Login | 4624 |
-| Failed Login | 4625 |
-| Process Creation | 4688 |
-| Service Creation | 7045 |
-| User Added to Admin | 4732 |
-
-Your SOC can now see everything happening on the endpoint 👀
 
 ---
 
-# 🎯 Why This Is Important
-
-In real companies:
-
-- Endpoints are main attack targets
-- Hackers try password attacks
-- Hackers run malware
-- Hackers escalate privileges
-
-By sending logs to Splunk, you can:
-
-✔ Monitor everything  
-✔ Detect attacks  
-✔ Investigate incidents  
-✔ Build SOC skills  
-
-Hands-on practice > Only theory.
-
----
-
-# 🚀 What You Built Today
-
-✔ Windows EC2 inside AWS  
-✔ Joined to Active Directory  
-✔ Installed Splunk Forwarder  
-✔ Sent logs to Splunk  
-✔ Enabled enterprise-level monitoring  
-
-This is real SOC work.
-
----
-
-# 🏁 Final Test
-
-If this works:
-
-```spl
-index=*
-```
-
-And you see Windows logs →  
-
-🎉 Your Endpoint Deployment & Log Forwarding is SUCCESSFUL.
-
----
-
-# 📌 END OF DAY 4 – Endpoint Deployment & Log Forwarding
+*SOC Lab Infrastructure | Windows Endpoint | Splunk Universal Forwarder | AWS Free Tier | Author: [Nadil](https://github.com/Nadhil-an)*
