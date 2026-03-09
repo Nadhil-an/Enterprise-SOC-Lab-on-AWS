@@ -53,7 +53,11 @@ Each failed login generates:
 📸 — Failed Login Attempt  
 
 
-![Failed Login](images/failed_login_4625.png)
+<p align="center">
+  <img src="../assets/ad-login.png" width="700">
+</p>
+
+
 
 ---
 
