@@ -263,7 +263,7 @@ This simulation confirms that Windows Security logging and Splunk detection rule
 
 - [AD-02 — Account Lockout Detection (Event ID 4740)](../AD-02_Account_Lockout_4740.md)
 - [AD-03 — Backdoor User & Group Creation (Event ID 4720/4727/4728)](../AD-03_User_Group_Creation.md)
-- [E4 — Local Privilege Escalation via Administrators Group](../../endpoint-attacks/E4_Privilege_Escalation_4732.md)
+
 
 ---
 
