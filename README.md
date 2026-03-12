@@ -208,13 +208,15 @@ Enterprise-SIEM-SOLUTION/
 - [ ] Add Kerberoasting and Pass-the-Hash AD labs
 - [ ] Add XSS and CSRF web attack labs
 - [ ] Write automated Splunk correlation alert rules
-- [ ] Add SOAR playbook responses per attack type
+
 
 ---
 
 ## 👤 Author
 
 **Nadil** — Cybersecurity Student, Lovely Professional University
+
+
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-nadhilan-blue?style=flat-square&logo=linkedin)](https://www.linkedin.com/in/nadhilan/)
 [![GitHub](https://img.shields.io/badge/GitHub-Nadhil--an-black?style=flat-square&logo=github)](https://github.com/Nadhil-an)
 
