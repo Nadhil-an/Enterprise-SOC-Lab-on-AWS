@@ -325,7 +325,7 @@ This simulation validates that the Account Lockout Policy is properly configured
 
 - [AD-01 — Brute Force RDP Detection (Event ID 4625)](../AD-01_Brute_Force_RDP_4625.md)
 - [AD-03 — Backdoor User & Group Creation (Event ID 4720/4727/4728)](../AD-03_User_Group_Creation.md)
-- [E4 — Local Privilege Escalation via Administrators Group](../../endpoint-attacks/E4_Privilege_Escalation_4732.md)
+
 
 ---
 
